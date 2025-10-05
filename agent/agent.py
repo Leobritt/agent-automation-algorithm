@@ -33,7 +33,7 @@ class Agent:
         """Atualiza a direção do agente e sincroniza os componentes."""
         if new_dir in DIRECTIONS:
             self.dir = new_dir
-            # keep sensors and actuators in sync
+            # manter sensores e atuadores sincronizados
             try:
                 self.sensors.dir = new_dir
                 self.actuators.dir = new_dir
@@ -85,7 +85,7 @@ class Agent:
             self.move()
             return
 
-        # Fallback 1: Explorar vizinho desconhecido e evitar retornar para last_position quando possível
+        # Alternativa 1: Explorar vizinho desconhecido e evitar retornar para last_position quando possível
         for d in self._ordered_directions():
             di, dj = DIRECTIONS[d]
             q = (self.i + di, self.j + dj)
@@ -94,7 +94,7 @@ class Agent:
                 self.move()
                 return
 
-        # Fallback 2: Andar para vizinho conhecido livre, evitando reversão imediata
+        # Alternativa 2: Andar para vizinho conhecido livre, evitando reversão imediata
         for d in self._ordered_directions():
             di, dj = DIRECTIONS[d]
             q = (self.i + di, self.j + dj)
@@ -139,14 +139,14 @@ class Agent:
             target_set = set(frontiers)
             path = self.planner.bfs(origin, lambda p: p in target_set)
             if path and len(path) > 1:
-                # sanity check: verify path steps are not walls in the real environment
+                # verificação de sanidade: confirma que os passos do caminho não são paredes no ambiente real
                 bad = [(x,y) for (x,y) in path if self.env.cell(x,y) == 'X']
                 if bad:
-                    # mark bad cells in memory as walls so we don't keep planning to them
+                    # marca células inválidas na memória como paredes para não tentarmos planejar para elas novamente
                     for bx, by in bad:
                         self.memory.memory[(bx, by)] = 'X'
                 else:
-                    # also record memory vs env for path nodes if needed
+                    # também registra memória vs ambiente para os nós do caminho, se necessário
                     self.plan = self.planner.translate_path(path)
                     return
 
@@ -171,7 +171,7 @@ class Agent:
         candidates = []
         for d, (di, dj) in DIRECTIONS.items():
             q = (self.i + di, self.j + dj)
-            # skip real walls
+            # ignorar paredes reais
             if self.env.cell(*q) == 'X':
                 continue
             is_last = 1 if getattr(self.memory, 'last_position', None) == q else 0
