@@ -1,77 +1,94 @@
+from typing import List, Tuple  # apenas dicas de tipo
+
 class Environment:
-    def __init__(self, map_file):
-        self.map = self.load_map(map_file)
+    def __init__(self, txt_path: str):
+        # Carrega o mapa do arquivo txt e salva em uma matriz de caracteres
+        self.grid: List[List[str]] = self._load(txt_path)
 
-    def load_map(self, map_file):
-        maze = []
-        """
-        O with as context manager é usado para abrir o arquivo
-        garantindo que ele seja fechado corretamente após a leitura.
-        'r' = modo de leitura
-        """
-        with open(map_file, 'r') as file:
-            """Cada iteração da for retorna uma string 
-            correspondente a uma linha do arquivo"""
-            for line in file:
-                """
-                maze.append(...) adiciona essa lista de caracteres como uma nova linha na matriz.
-                list(string) transforma a string em lista de caracteres.
-                line.strip() Remove espaços em branco e 
-                quebras de linha do início e do fim da string.
-                """
-                maze.append(list(line.strip()))
-        return maze
+        # altura = número de linhas, largura = número de colunas
+        self.height = len(self.grid)
+        self.width = len(self.grid[0]) if self.height > 0 else 0
 
-    def get_perception(self, position):
-        """
-        esse método devolve uma matriz 3x3 em volta da posição atual do agente.
-        tupla (x, y) representando a posição atual do agente.
-        """
-        x, y = position 
-        """
-        cria lista vazia para armazenar a percepção
-        as 3 linhas da percepção.
-        """
-        perception = []
+        # guarda onde está a entrada e todas as saídas
+        self.entry = self._find('E')
+        self.exits = self._find_all('S')
 
-        """
-        range(inicio, fim) gera uma sequência de 
-        números de inicio até fim - 1 -que não é incluido
-        x - 1 a linha de cima do agente
-        x a linha onde o agente está
-        x + 1 a linha de baixo do agente
+        # conta quantas comidas existem no mapa
+        self.total_food = sum(row.count('o') for row in self.grid)
 
-        0
-        1
-        2 -> agente está aqui 
-        3
+    def _load(self, path: str) -> List[List[str]]:
+        # abre o arquivo de texto e lê todas as linhas (ignora linhas vazias finais)
+        with open(path, 'r', encoding='utf-8') as f:
+            lines = [list(l.strip('\n')) for l in f.readlines() if l.strip('\n')]
+        # valida se todas as linhas têm o mesmo tamanho
+        width = len(lines[0])
+        assert all(len(l) == width for l in lines), "Mapa com larguras diferentes."
+        return lines
 
-        x = 2
-        x - 1 = 1 (linha de cima do agente)
-        x = 2 (linha do agente) 
-        x + 1 = 3 (linha de baixo do agente)
-        range(1, 4) -> 1, 2, 3
+    def _find(self, target: str) -> Tuple[int, int]:
+        # procura a primeira ocorrência de um símbolo (ex: 'E')
+        for i, row in enumerate(self.grid):
+            for j, c in enumerate(row):
+                if c == target:
+                    return (i, j)
+        raise ValueError(f"Símbolo '{target}' não encontrado no mapa.")
+
+    def _find_all(self, target: str) -> List[Tuple[int, int]]:
+        # retorna todas as posições de um símbolo (ex: todas as saídas 'S')
+        coords = []
+        for i, row in enumerate(self.grid):
+            for j, c in enumerate(row):
+                if c == target:
+                    coords.append((i, j))
+        return coords
+
+    def inside(self, i: int, j: int) -> bool:
+        # verifica se uma posição está dentro do mapa
+        return 0 <= i < self.height and 0 <= j < self.width
+
+    def cell(self, i: int, j: int) -> str:
+        # retorna o que existe na posição (i,j)
+        # se estiver fora do mapa, conta como parede 'X'
+        if not self.inside(i, j):
+            return 'X'
+        return self.grid[i][j]
+
+    def collect_if_food(self, i: int, j: int) -> bool:
+        # se houver comida na posição, substitui por '_' e retorna True
+        if self.grid[i][j] == 'o':
+            self.grid[i][j] = '_'
+            return True
+        return False
+
+    # === SENSOR 3x3 ===
+    def get_sensor(self, i: int, j: int, direction: str) -> List[List[str]]:
         """
-        for i in range(x - 1, x + 2):
-            """armazena valores de uma linha da percepção"""
-            row = []
-            """percorre as colunas vizinhas (esquerda, atual, direita)"""
-            for j in range(y - 1, y + 2):
-                """
-                verifica se os índices estão dentro dos limites do mapa 
-                len(self.map) quantidade de linhas (altura).
-                len(self.map[0]) quantidade de colunas (largura).
-                """
-                if 0 <= i < len(self.map) and 0 <= j < len(self.map[0]):
-                    """
-                    (self.map[i][j]) Se a posição (i, j) for válida, 
-                    pega o caractere correspondente do mapa e adiciona na linha da percepção.
-                    """
-                    row.append(self.map[i][j])
+        Retorna uma matriz 3x3 com o entorno do agente.
+        Padrão adotado (linhas x colunas):
+            [0,0]=NW  [0,1]=N   [0,2]=NE
+            [1,0]=W   [1,1]=C   [1,2]=E
+            [2,0]=SW  [2,1]=S   [2,2]=DIRECAO (letra 'N','S','L','O')
+
+        Fora do mapa conta como 'X'. [1,1] reflete o terreno atual.
+        """
+        sensor = [['X' for _ in range(3)] for _ in range(3)]
+
+        # vizinhança relativa ao (i,j)
+        rel = [
+            (-1, -1), (-1, 0), (-1, 1),
+            (0,  -1), (0,  0), (0,  1),
+            (1,  -1), (1,  0), (1,  1),
+        ]
+
+        idx = 0
+        for r in range(3):
+            for c in range(3):
+                if r == 2 and c == 2:
+                    # posição de direção do agente (exigência do enunciado)
+                    sensor[r][c] = direction
                 else:
-                    """Se a posição (i, j) for fora do mapa, adiciona '#'"""
-                    row.append('#')  # Paredes fora do limite
-            """Depois de preencher uma linha de 3 elementos, adiciona essa linha à matriz de percepção."""
-            perception.append(row)
-            """Retorna a percepção final: uma matriz 3x3 (lista de listas)."""
-        return perception
+                    di, dj = rel[idx]
+                    sensor[r][c] = self.cell(i + di, j + dj)
+                idx += 1
+
+        return sensor
