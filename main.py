@@ -20,7 +20,7 @@ def main():
     # Arquivo do labirinto (input/maze.txt)
     map_path = Path("input") / "maze.txt"
     if not map_path.exists():
-        print(f"[ERRO] Arquivo do mapa não encontrado em: {map_path}")
+        print(f"[ERRO] Não foi possível localizar o arquivo do mapa em: {map_path}")
         return
 
     # Instancia ambiente e agente
@@ -28,17 +28,17 @@ def main():
     # passa explicitamente a quantidade de comidas para cumprir o enunciado literalmente
     ag = Agent(env, initial_direction='N', target_food=env.total_food)
 
-    # Info inicial
-    print("=== INFO AMBIENTE ===")
-    print(f"Dimensões (alt x larg): {env.height} x {env.width}")
-    print(f"Entrada (E) em: {env.entry}")
+    # Informações do ambiente
+    print("=== AMBIENTE ===")
+    print(f"Tamanho (alt x larg): {env.height} x {env.width}")
+    print(f"Entrada (E): {env.entry}")
     print(f"Saídas (S): {env.exits}")
-    print(f"Comidas: {env.total_food}\n")
+    print(f"Total de comidas no mapa: {env.total_food}\n")
 
     # Render inicial
-    print("Início:")
+    print("Mapa inicial:")
     render(env, ag)
-    time.sleep(0.02)
+    time.sleep(0.03)
 
     # Loop de simulação
     max_steps = env.height * env.width * 50  # trava de segurança (aumentado)
@@ -49,19 +49,19 @@ def main():
             break
         ag.step()
 
-        # “animação” no console
+        # "animação" no console
         print("\033[H\033[J", end="")  # limpa console (ANSI)
         render(env, ag)
-        time.sleep(0.02)
+        time.sleep(0.05)
 
     else:
-        print("\n[ALERTA] Limite de iterações atingido. O agente pode estar preso em um loop.")
+        print("\n[AVISO] Limite de iterações atingido — possível loop detectado.")
 
     # Resultado final
-    print("\nFim.")
+    print("\nSimulação encerrada.")
     print(f"Comidas coletadas: {ag.collected_food}/{env.total_food}")
-    print(f"Passos: {ag.steps}")
-    print(f"Pontuação: {ag.score()}")
+    print(f"Movimentos realizados: {ag.steps}")
+    print(f"Pontuação final: {ag.score()}")
 
 if __name__ == "__main__":
     main()
