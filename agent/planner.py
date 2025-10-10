@@ -30,6 +30,18 @@ class Planner:
                     queue.append(v)
         return None
 
+    def translate_path(self, path: List[Tuple[int, int]]) -> List[str]:
+        directions: List[str] = []
+        for k in range(1, len(path)):
+            i0, j0 = path[k - 1]
+            i1, j1 = path[k]
+            di, dj = i1 - i0, j1 - j0
+            d = DELTA_TO_DIR.get((di, dj))
+            if d:
+                directions.append(d)
+        return directions
+
+
     def _free_neighbors(self, p: Tuple[int, int]) -> List[Tuple[int, int]]:
         """Retorna vizinhos livres (não paredes) a partir da memória conhecida."""
         i, j = p
@@ -42,14 +54,3 @@ class Planner:
             if ch != 'X':
                 res.append(q)
         return res
-
-    def translate_path(self, path: List[Tuple[int, int]]) -> List[str]:
-        directions: List[str] = []
-        for k in range(1, len(path)):
-            i0, j0 = path[k - 1]
-            i1, j1 = path[k]
-            di, dj = i1 - i0, j1 - j0
-            d = DELTA_TO_DIR.get((di, dj))
-            if d:
-                directions.append(d)
-        return directions

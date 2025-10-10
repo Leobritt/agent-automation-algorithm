@@ -25,9 +25,6 @@ class Agent:
         self.plan: List[str] = []
         self._update_memory()
 
-    def _update_memory(self):
-        sensor = self.sensors.get_sensor()
-        self.memory.update(self.i, self.j, sensor, self.env)
 
     def set_direction(self, new_dir: str):
         """Atualiza a direção do agente e sincroniza os componentes."""
@@ -39,6 +36,13 @@ class Agent:
                 self.actuators.dir = new_dir
             except Exception:
                 pass
+  
+    def score(self) -> int:
+        return self.collected_food * 10 - self.steps
+    
+    def _update_memory(self):
+        sensor = self.sensors.get_sensor()
+        self.memory.update(self.i, self.j, sensor, self.env)
 
     def move(self) -> bool:
         """Realiza um movimento através de Actuators e atualiza estado e memória do agente.
@@ -102,13 +106,6 @@ class Agent:
                 self.set_direction(d)
                 self.move()
                 return
-        
-    def finished(self) -> bool:
-        at_exit = (self.i, self.j) in self.env.exits
-        return self.collected_food >= self.target_food and at_exit
-
-    def score(self) -> int:
-        return self.collected_food * 10 - self.steps
 
     def _plan(self):
         origin = (self.i, self.j)
@@ -162,6 +159,10 @@ class Agent:
         # Se nada encontrado, zera plano
         self.plan = []
 
+    def finished(self) -> bool:
+        at_exit = (self.i, self.j) in self.env.exits
+        return self.collected_food >= self.target_food and at_exit
+        
     def _ordered_directions(self) -> List[str]:
         """Retorna direções ordenadas para evitar retorno imediato e priorizar células menos visitadas.
 
