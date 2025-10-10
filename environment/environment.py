@@ -33,6 +33,33 @@ class Environment:
                     return (i, j)
         raise ValueError(f"Símbolo '{target}' não encontrado no mapa.")
 
+    # 3x3 sensor
+    def get_sensor(self, i: int, j: int, direction: str) -> List[List[str]]:
+        """
+        Retorna uma matriz 3x3 com o entorno do agente.
+        """
+        sensor = [['X' for _ in range(3)] for _ in range(3)]
+
+        # vizinhança relativa ao (i,j)
+        rel = [
+            (-1, -1), (-1, 0), (-1, 1),
+            (0,  -1), (0,  0), (0,  1),
+            (1,  -1), (1,  0), (1,  1),
+        ]
+
+        idx = 0
+        for r in range(3):
+            for c in range(3):
+                if r == 2 and c == 2:
+                    # posição de direção do agente (exigência do enunciado)
+                    sensor[r][c] = direction
+                else:
+                    di, dj = rel[idx]
+                    sensor[r][c] = self.cell(i + di, j + dj)
+                idx += 1
+
+        return sensor
+    
     def _find_all(self, target: str) -> List[Tuple[int, int]]:
         # retorna todas as posições de um símbolo (ex: todas as saídas 'S')
         coords = []
@@ -59,36 +86,3 @@ class Environment:
             self.grid[i][j] = '_'
             return True
         return False
-
-    # === SENSOR 3x3 ===
-    def get_sensor(self, i: int, j: int, direction: str) -> List[List[str]]:
-        """
-        Retorna uma matriz 3x3 com o entorno do agente.
-        Padrão adotado (linhas x colunas):
-            [0,0]=NW  [0,1]=N   [0,2]=NE
-            [1,0]=W   [1,1]=C   [1,2]=E
-            [2,0]=SW  [2,1]=S   [2,2]=DIRECAO (letra 'N','S','L','O')
-
-        Fora do mapa conta como 'X'. [1,1] reflete o terreno atual.
-        """
-        sensor = [['X' for _ in range(3)] for _ in range(3)]
-
-        # vizinhança relativa ao (i,j)
-        rel = [
-            (-1, -1), (-1, 0), (-1, 1),
-            (0,  -1), (0,  0), (0,  1),
-            (1,  -1), (1,  0), (1,  1),
-        ]
-
-        idx = 0
-        for r in range(3):
-            for c in range(3):
-                if r == 2 and c == 2:
-                    # posição de direção do agente (exigência do enunciado)
-                    sensor[r][c] = direction
-                else:
-                    di, dj = rel[idx]
-                    sensor[r][c] = self.cell(i + di, j + dj)
-                idx += 1
-
-        return sensor

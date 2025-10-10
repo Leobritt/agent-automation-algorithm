@@ -103,7 +103,6 @@ class Agent:
                 self.move()
                 return
         
-    # ===== ESTADO =====
     def finished(self) -> bool:
         at_exit = (self.i, self.j) in self.env.exits
         return self.collected_food >= self.target_food and at_exit
