@@ -149,7 +149,7 @@ def main():
             for w in writers.values():
                 w.write(frame)
 
-        time.sleep(0.02)
+        time.sleep(0.05)
 
     for w in writers.values():
         w.release()

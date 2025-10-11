@@ -168,6 +168,13 @@ class Agent:
 
         Usa `self.memory.last_position` e `self.memory.visits`.
         """
+        # leitura de sensores (contagem de comida por setores) 
+        counts = None
+        try:
+            counts = self.sensors.food_counts_8dirs()
+        except Exception:
+            counts = None
+
         candidates = []
         for d, (di, dj) in DIRECTIONS.items():
             q = (self.i + di, self.j + dj)
@@ -176,7 +183,22 @@ class Agent:
                 continue
             is_last = 1 if getattr(self.memory, 'last_position', None) == q else 0
             visits = self.memory.visits.get(q, 0)
-            score = (is_last, visits)
-            candidates.append((score, d))
+            # Heurística: priorizar direções que apontam para setores com mais comida
+            # Peso diagonal menor para setores adjacentes (ex.: N considera NE/NW também)
+            food_score = 0.0
+            if counts is not None:
+                w_diag = 0.5
+                if d == 'N':
+                    food_score = counts['N'] + w_diag * (counts['NE'] + counts['NW'])
+                elif d == 'E':
+                    food_score = counts['E'] + w_diag * (counts['NE'] + counts['SE'])
+                elif d == 'S':
+                    food_score = counts['S'] + w_diag * (counts['SE'] + counts['SW'])
+                elif d == 'W':
+                    food_score = counts['W'] + w_diag * (counts['NW'] + counts['SW'])
+
+            # Ordenação: mais comida primeiro (-food_score), depois evitar retorno (is_last), depois menos visitado
+            key = (-food_score, is_last, visits)
+            candidates.append((key, d))
         candidates.sort(key=lambda x: x[0])
         return [d for _, d in candidates]
